@@ -1,0 +1,12 @@
+default:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: <YOUR_ACCOUNT_LOCATOR>
+      role: ACCOUNTADMIN
+      database: MTA_DEMO
+      warehouse: MTA_WH
+      schema: RAW
+      authenticator: externalbrowser
+      threads: 4

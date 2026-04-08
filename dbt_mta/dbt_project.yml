@@ -1,0 +1,26 @@
+name: 'mta_demo'
+version: '1.0.0'
+
+profile: 'default'
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  raw_database: "MTA_DEMO"
+  raw_schema: "RAW"
+
+models:
+  mta_demo:
+    staging:
+      +schema: STAGING
+      +materialized: view
+    analytics:
+      +schema: ANALYTICS
+      +materialized: table

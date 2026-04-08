@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+
+# Node
+node_modules/
+app/frontend/dist/
+
+# Built static assets (regenerated during Docker build)
+app/backend/static/
+
+# Environment / secrets
+.env
+.env.*
+*.p8
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Snowflake
+.snowflake/
+
+# dbt
+dbt_mta/target/
+dbt_mta/dbt_packages/
+dbt_mta/logs/
+
+# Docker
+*.tar

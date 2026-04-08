@@ -1,0 +1,273 @@
+name: MTA_SEMANTIC_VIEW
+tables:
+  - name: CHANNEL_PERFORMANCE
+    base_table:
+      database: MTA_DEMO
+      schema: ANALYTICS
+      table: CHANNEL_PERFORMANCE
+    dimensions:
+      - name: MODEL_TYPE
+        expr: MODEL_TYPE
+        description: Attribution model type (linear, last_touch, first_touch, time_decay, position_based, shapley)
+        sample_values:
+          - linear
+          - last_touch
+          - shapley
+      - name: CHANNEL
+        expr: CHANNEL
+        description: Marketing channel name
+        sample_values:
+          - search
+          - social
+          - display
+          - ctv
+      - name: CAMPAIGN_ID
+        expr: CAMPAIGN_ID
+        description: Campaign identifier
+      - name: CAMPAIGN_NAME
+        expr: CAMPAIGN_NAME
+        description: Campaign display name
+      - name: ADVERTISER_ID
+        expr: ADVERTISER_ID
+        description: Advertiser identifier
+    measures:
+      - name: IMPRESSIONS
+        expr: IMPRESSIONS
+        description: Number of impressions
+        default_aggregation: sum
+      - name: SPEND
+        expr: SPEND
+        description: Media spend in dollars
+        default_aggregation: sum
+      - name: CLICKS
+        expr: CLICKS
+        description: Number of clicks
+        default_aggregation: sum
+      - name: ATTRIBUTED_CONVERSIONS
+        expr: ATTRIBUTED_CONVERSIONS
+        description: Number of conversions attributed to this channel/campaign
+        default_aggregation: sum
+      - name: ATTRIBUTED_REVENUE
+        expr: ATTRIBUTED_REVENUE
+        description: Revenue attributed to this channel/campaign in dollars
+        default_aggregation: sum
+      - name: ROAS
+        expr: ROAS
+        description: Return on ad spend (revenue / spend)
+        default_aggregation: avg
+      - name: CPA
+        expr: CPA
+        description: Cost per acquisition
+        default_aggregation: avg
+
+  - name: CHANNEL_FORECAST
+    base_table:
+      database: MTA_DEMO
+      schema: ANALYTICS
+      table: CHANNEL_FORECAST
+    dimensions:
+      - name: CHANNEL
+        expr: CHANNEL
+        description: Marketing channel name
+      - name: WEEK_START
+        expr: WEEK_START
+        description: Forecast week start date
+    measures:
+      - name: FORECAST
+        expr: FORECAST
+        description: Forecasted weekly revenue in dollars
+        default_aggregation: sum
+      - name: LOWER_BOUND
+        expr: LOWER_BOUND
+        description: Lower bound of forecast confidence interval
+        default_aggregation: sum
+      - name: UPPER_BOUND
+        expr: UPPER_BOUND
+        description: Upper bound of forecast confidence interval
+        default_aggregation: sum
+
+  - name: MMM_COEFFICIENTS
+    base_table:
+      database: MTA_DEMO
+      schema: ANALYTICS
+      table: MMM_COEFFICIENTS
+    dimensions:
+      - name: CHANNEL
+        expr: CHANNEL
+        description: Marketing channel
+    measures:
+      - name: BETA
+        expr: BETA
+        description: Log-log elasticity coefficient — a 1% increase in spend yields BETA% increase in revenue
+        default_aggregation: avg
+      - name: R_SQUARED
+        expr: R_SQUARED
+        description: Model fit (R-squared) — higher is better
+        default_aggregation: avg
+      - name: TOTAL_SPEND
+        expr: TOTAL_SPEND
+        description: Total historical spend for this channel
+        default_aggregation: sum
+      - name: TOTAL_REVENUE
+        expr: TOTAL_REVENUE
+        description: Total historical revenue for this channel
+        default_aggregation: sum
+      - name: ROAS
+        expr: ROAS
+        description: Historical return on ad spend
+        default_aggregation: avg
+
+  - name: CAMPAIGN_DAILY_METRICS
+    base_table:
+      database: MTA_DEMO
+      schema: ANALYTICS
+      table: CAMPAIGN_DAILY_METRICS
+    dimensions:
+      - name: EVENT_DATE
+        expr: EVENT_DATE
+        description: Date of the metrics
+      - name: CAMPAIGN_ID
+        expr: CAMPAIGN_ID
+        description: Campaign identifier
+      - name: CAMPAIGN_NAME
+        expr: CAMPAIGN_NAME
+        description: Campaign display name
+      - name: CHANNEL
+        expr: CHANNEL
+        description: Marketing channel
+      - name: ADVERTISER_ID
+        expr: ADVERTISER_ID
+        description: Advertiser identifier
+      - name: MODEL_TYPE
+        expr: MODEL_TYPE
+        description: Attribution model type
+    measures:
+      - name: DAILY_IMPRESSIONS
+        expr: IMPRESSIONS
+        description: Daily impression count
+        default_aggregation: sum
+      - name: DAILY_SPEND
+        expr: SPEND
+        description: Daily spend in dollars
+        default_aggregation: sum
+      - name: DAILY_CLICKS
+        expr: CLICKS
+        description: Daily click count
+        default_aggregation: sum
+      - name: DAILY_CONVERSIONS
+        expr: ATTRIBUTED_CONVERSIONS
+        description: Daily attributed conversions
+        default_aggregation: sum
+      - name: DAILY_REVENUE
+        expr: ATTRIBUTED_REVENUE
+        description: Daily attributed revenue
+        default_aggregation: sum
+
+  - name: PROPENSITY_SCORES
+    base_table:
+      database: MTA_DEMO
+      schema: ANALYTICS
+      table: PROPENSITY_SCORES
+    dimensions:
+      - name: RESOLVED_ID
+        expr: RESOLVED_ID
+        description: Resolved user identifier
+      - name: ACTUAL
+        expr: ACTUAL
+        description: Whether the user actually converted (1) or not (0)
+      - name: PREDICTED_CLASS
+        expr: PREDICTED_CLASS
+        description: Model-predicted conversion class (1 or 0)
+    measures:
+      - name: PROPENSITY_SCORE
+        expr: PROPENSITY_SCORE
+        description: Probability of conversion (0 to 1)
+        default_aggregation: avg
+      - name: TOTAL_IMPRESSIONS
+        expr: TOTAL_IMPRESSIONS
+        description: Total impressions seen by user
+        default_aggregation: sum
+      - name: NUM_CHANNELS
+        expr: NUM_CHANNELS
+        description: Number of distinct channels the user was exposed to
+        default_aggregation: avg
+      - name: TOTAL_CLICKS
+        expr: TOTAL_CLICKS
+        description: Total clicks by user
+        default_aggregation: sum
+
+verified_queries:
+  - name: top_channels_by_revenue_linear
+    question: Which channels drive the most attributed revenue using the linear model?
+    verified_query: |
+      SELECT CHANNEL, SUM(ATTRIBUTED_REVENUE) AS TOTAL_REVENUE
+      FROM MTA_DEMO.ANALYTICS.CHANNEL_PERFORMANCE
+      WHERE MODEL_TYPE = 'linear'
+      GROUP BY CHANNEL
+      ORDER BY TOTAL_REVENUE DESC
+
+  - name: channel_roas_comparison
+    question: What is the ROAS for each channel across all attribution models?
+    verified_query: |
+      SELECT MODEL_TYPE, CHANNEL, SUM(ATTRIBUTED_REVENUE) / NULLIF(SUM(SPEND), 0) AS ROAS
+      FROM MTA_DEMO.ANALYTICS.CHANNEL_PERFORMANCE
+      GROUP BY MODEL_TYPE, CHANNEL
+      ORDER BY MODEL_TYPE, ROAS DESC
+
+  - name: shapley_vs_linear
+    question: How does Shapley attribution compare to linear attribution by channel?
+    verified_query: |
+      SELECT CHANNEL,
+             SUM(CASE WHEN MODEL_TYPE = 'linear' THEN ATTRIBUTED_REVENUE END) AS LINEAR_REVENUE,
+             SUM(CASE WHEN MODEL_TYPE = 'shapley' THEN ATTRIBUTED_REVENUE END) AS SHAPLEY_REVENUE
+      FROM MTA_DEMO.ANALYTICS.CHANNEL_PERFORMANCE
+      GROUP BY CHANNEL
+      ORDER BY LINEAR_REVENUE DESC
+
+  - name: forecast_next_12_weeks
+    question: What is the revenue forecast for the next 12 weeks by channel?
+    verified_query: |
+      SELECT CHANNEL, WEEK_START, FORECAST, LOWER_BOUND, UPPER_BOUND
+      FROM MTA_DEMO.ANALYTICS.CHANNEL_FORECAST
+      ORDER BY CHANNEL, WEEK_START
+
+  - name: mmm_elasticity
+    question: Which channels have the highest spend elasticity?
+    verified_query: |
+      SELECT CHANNEL, BETA AS ELASTICITY, R_SQUARED, ROAS
+      FROM MTA_DEMO.ANALYTICS.MMM_COEFFICIENTS
+      ORDER BY BETA DESC
+
+  - name: high_propensity_users
+    question: How many users have a high propensity to convert?
+    verified_query: |
+      SELECT
+        CASE WHEN PROPENSITY_SCORE >= 0.5 THEN 'High'
+             WHEN PROPENSITY_SCORE >= 0.2 THEN 'Medium'
+             ELSE 'Low' END AS PROPENSITY_TIER,
+        COUNT(*) AS USER_COUNT,
+        SUM(ACTUAL) AS ACTUAL_CONVERTERS,
+        AVG(PROPENSITY_SCORE) AS AVG_SCORE
+      FROM MTA_DEMO.ANALYTICS.PROPENSITY_SCORES
+      GROUP BY 1
+      ORDER BY AVG_SCORE DESC
+
+  - name: top_campaigns_by_spend
+    question: What are the top 10 campaigns by spend?
+    verified_query: |
+      SELECT CAMPAIGN_NAME, CHANNEL, ADVERTISER_ID,
+             SUM(ATTRIBUTED_REVENUE) AS TOTAL_REVENUE,
+             SUM(SPEND) AS TOTAL_SPEND,
+             SUM(ATTRIBUTED_REVENUE) / NULLIF(SUM(SPEND), 0) AS ROAS
+      FROM MTA_DEMO.ANALYTICS.CHANNEL_PERFORMANCE
+      WHERE MODEL_TYPE = 'linear'
+      GROUP BY CAMPAIGN_NAME, CHANNEL, ADVERTISER_ID
+      ORDER BY TOTAL_SPEND DESC
+      LIMIT 10
+
+  - name: total_spend_and_revenue
+    question: What is the total spend and revenue across all channels?
+    verified_query: |
+      SELECT SUM(TOTAL_SPEND) AS TOTAL_SPEND, SUM(TOTAL_REVENUE) AS TOTAL_REVENUE,
+             SUM(TOTAL_REVENUE) / NULLIF(SUM(TOTAL_SPEND), 0) AS OVERALL_ROAS
+      FROM MTA_DEMO.ANALYTICS.MMM_COEFFICIENTS

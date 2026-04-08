@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: raw
+    database: MTA_DEMO
+    schema: RAW
+    tables:
+      - name: people
+      - name: device_graph
+      - name: impressions
+      - name: clicks
+      - name: pixel_fires
+      - name: sessions
+      - name: conversions
+      - name: foot_traffic

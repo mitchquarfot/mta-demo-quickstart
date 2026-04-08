@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sf-blue: #29B5E8;
+  --sf-dark: #1B2A4A;
+  --sf-navy: #0F1B2D;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dark body {
+  @apply bg-sf-navy text-gray-100;
+}
